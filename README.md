@@ -1,6 +1,15 @@
 # Reverse SOCKS5, UDP, HTTP & MTProto Proxy Cluster (Go High-Speed)
 
-Высокопроизводительная реализация обратного прокси-кластера на **Go**:
+[![Go Version](https://img.shields.io/badge/go-1.23+-00ADD8.svg)](https://golang.org)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python Version Available](https://img.shields.io/badge/Python%20Version-AsyncIO-blue.svg)](https://github.com/zenkdom/reverse-socks-python)
+[![Telegram Fake-TLS 1.3](https://img.shields.io/badge/Telegram-MTProto%20Fake--TLS-blue.svg)](https://telegram.org)
+
+> [!NOTE]
+> ?? **100% ?????????????????? ????????????? ?????????:**  
+> Go-?????? ? **[Python-??????](https://github.com/zenkdom/reverse-socks-python)** ?????????? ????????? ?????????? ???????? ??????????????. ??????????? ????? ?? Go (socks-reverse) ????? ???????????? ? Control-??????? ?? Python, ? ????? ?? Python � ? Control-??????? ?? Go.
+
+ысокопроизводительная реализация обратного прокси-кластера на **Go**:
 - **Универсальный Multi-Protocol прокси** (порт `1080`):
   - **SOCKS5 с поддержкой TCP и UDP**: команды `CONNECT` (0x01), `BIND` (0x02), и `UDP ASSOCIATE` (0x03) по RFC 1928 / RFC 1929. Полная поддержка звонков Telegram, голосовых чатов, WebRTC, DNS, онлайн-игр и QUIC/HTTP3.
   - **SOCKS4 и SOCKS4a**: поддержка классических клиентов и удаленного резолва доменов.
@@ -38,7 +47,7 @@
                              +---------------------------------------+
                              |           ВЕБ-АДМИНИСТРАТОР           |
                              |      http://IP_CONTROL:9001           |
-                             |       Логин: ziqp / ziqp2010          |
+                             |       Логин: admin / changeme123          |
                              +-------------------+-------------------+
                                                  |
                                                  | 1-клик подключение в Telegram /
