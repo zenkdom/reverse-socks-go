@@ -1,0 +1,15 @@
+[Unit]
+Description=Reverse SOCKS5 Worker Node (Go)
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/socks-reverse
+ExecStart=/opt/socks-reverse/socks-reverse-linux-amd64 --config /opt/socks-reverse/config.json
+Restart=always
+RestartSec=3
+LimitNOFILE=65535
+
+[Install]
+WantedBy=multi-user.target

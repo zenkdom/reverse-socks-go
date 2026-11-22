@@ -1,0 +1,29 @@
+# Compiled binaries and libraries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+bin/
+dist/
+*-linux-amd64
+*-linux-arm64
+*-darwin-*
+
+# Local runtime databases & configs containing secrets
+users.json
+mtproto_users.json
+config.json
+torrc
+
+# Logs
+*.log
+logs/
+
+# IDE and OS files
+.idea/
+.vscode/
+*.swp
+*~
+.DS_Store
+Thumbs.db
