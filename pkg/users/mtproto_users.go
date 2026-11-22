@@ -190,7 +190,7 @@ func (m *MtprotoUserManager) GetAllClients() []MtprotoClient {
 func (m *MtprotoUserManager) AddClient(clientName, secret, domain, tag string) (bool, string, *MtprotoClient) {
 	clientName = strings.TrimSpace(clientName)
 	if clientName == "" {
-		return false, "Имя клиента MTProto не может быть пустым", nil
+		return false, "MTProto client name cannot be empty", nil
 	}
 
 	dom := domain
@@ -203,7 +203,7 @@ func (m *MtprotoUserManager) AddClient(clientName, secret, domain, tag string) (
 	if strings.TrimSpace(tag) != "" {
 		tagPtr = NormalizeTag(tag)
 		if tagPtr == nil {
-			return false, "Тег промо-канала должен содержать ровно 32 hex-символа (16 байт) из @MTProxybot", nil
+			return false, "Promo channel TAG must be exactly 32 hex characters (from @MTProxybot)", nil
 		}
 	}
 
@@ -224,7 +224,7 @@ func (m *MtprotoUserManager) AddClient(clientName, secret, domain, tag string) (
 		return false, err.Error(), nil
 	}
 
-	return true, "Клиент успешно добавлен", &client
+	return true, "Client created successfully", &client
 }
 
 // SetClientTag sets or updates promo TAG for an MTProto client.
@@ -234,7 +234,7 @@ func (m *MtprotoUserManager) SetClientTag(clientName, tag string) (bool, string)
 
 	client, ok := m.clients[clientName]
 	if !ok {
-		return false, "Клиент не найден"
+		return false, "Client not found"
 	}
 
 	if strings.TrimSpace(tag) == "" {
@@ -242,7 +242,7 @@ func (m *MtprotoUserManager) SetClientTag(clientName, tag string) (bool, string)
 	} else {
 		tagPtr := NormalizeTag(tag)
 		if tagPtr == nil {
-			return false, "Тег промо-канала должен содержать ровно 32 hex-символа"
+			return false, "Promo channel TAG must be exactly 32 hex characters"
 		}
 		client.Tag = tagPtr
 	}
@@ -251,7 +251,7 @@ func (m *MtprotoUserManager) SetClientTag(clientName, tag string) (bool, string)
 	if err := m.saveLocked(); err != nil {
 		return false, err.Error()
 	}
-	return true, "Тег успешно обновлен"
+	return true, "Tag updated successfully"
 }
 
 // DeleteClient deletes an MTProto client.
@@ -260,11 +260,11 @@ func (m *MtprotoUserManager) DeleteClient(clientName string) (bool, string) {
 	defer m.mu.Unlock()
 
 	if _, ok := m.clients[clientName]; !ok {
-		return false, "Клиент не найден"
+		return false, "Client not found"
 	}
 	delete(m.clients, clientName)
 	if err := m.saveLocked(); err != nil {
 		return false, err.Error()
 	}
-	return true, "Клиент успешно удален"
+	return true, "Client deleted successfully"
 }

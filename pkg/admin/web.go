@@ -233,7 +233,7 @@ func (ws *WebServer) handleLogin(w http.ResponseWriter, r *http.Request) {
 		}
 		ws.loginAttemptsMu.Unlock()
 
-		http.Redirect(w, r, "/login?error="+url.QueryEscape("Неверный логин или пароль"), http.StatusFound)
+		http.Redirect(w, r, "/login?error="+url.QueryEscape("Invalid username or password"), http.StatusFound)
 		return
 	}
 
@@ -244,11 +244,11 @@ func (ws *WebServer) handleLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	htmlContent := fmt.Sprintf(`<!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Вход | SOCKS5 Control Admin</title>
+<title>Sign In | SOCKS5 Control Admin</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
 body { background-color: #0f172a; color: #f8fafc; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
@@ -268,18 +268,18 @@ button:hover { background: #4f46e5; }
 <body>
 <div class="card">
   <h1>SOCKS5 Control (Go)</h1>
-  <p class="sub">Панель администратора сервера</p>
+  <p class="sub">Server Administration Dashboard</p>
   %s
   <form method="POST" action="/login">
     <div class="form-group">
-      <label for="username">Логин</label>
+      <label for="username">Username</label>
       <input type="text" id="username" name="username" required autocomplete="username" autofocus>
     </div>
     <div class="form-group">
-      <label for="password">Пароль</label>
+      <label for="password">Password</label>
       <input type="password" id="password" name="password" required autocomplete="current-password">
     </div>
-    <button type="submit">Войти</button>
+    <button type="submit">Sign In</button>
   </form>
 </div>
 </body>
@@ -325,7 +325,7 @@ func (ws *WebServer) handleDashboard(w http.ResponseWriter, r *http.Request) {
 	// Agents table
 	var agentsRows strings.Builder
 	if len(agents) == 0 {
-		agentsRows.WriteString(`<tr><td colspan="6" class="empty">Нет активных reverse-нод. Подключите socks-reverse сервер.</td></tr>`)
+		agentsRows.WriteString(`<tr><td colspan="6" class="empty">No active reverse nodes. Connect a socks-reverse node сервер.</td></tr>`)
 	} else {
 		for _, a := range agents {
 			uptime := formatDuration(a.UptimeSeconds)
@@ -344,7 +344,7 @@ func (ws *WebServer) handleDashboard(w http.ResponseWriter, r *http.Request) {
 
 			ipDisplay := fmt.Sprintf(`<code>%s</code>`, html.EscapeString(a.RemoteIP))
 			if a.ExitIP != "" && a.ExitIP != a.RemoteIP {
-				ipDisplay = fmt.Sprintf(`<code>%s</code> <span style='font-size:10px; color:#34d399; font-weight:600;'>✓ Выходной IP</span><br><span style='font-size:11px; color:#64748b;'>Шлюз: %s</span>`, html.EscapeString(a.ExitIP), html.EscapeString(a.RemoteIP))
+				ipDisplay = fmt.Sprintf(`<code>%s</code> <span style='font-size:10px; color:#34d399; font-weight:600;'>✓ Exit IP</span><br><span style='font-size:11px; color:#64748b;'>Шлюз: %s</span>`, html.EscapeString(a.ExitIP), html.EscapeString(a.RemoteIP))
 			}
 
 			agentsRows.WriteString(fmt.Sprintf(`<tr>
@@ -361,7 +361,7 @@ func (ws *WebServer) handleDashboard(w http.ResponseWriter, r *http.Request) {
 	// SOCKS5 Users table
 	var usersRows strings.Builder
 	if len(socksUsers) == 0 {
-		usersRows.WriteString(`<tr><td colspan="5" class="empty">Список пользователей пуст. Добавьте первого пользователя ниже.</td></tr>`)
+		usersRows.WriteString(`<tr><td colspan="5" class="empty">User list is empty. Add a new user below.</td></tr>`)
 	} else {
 		for uname, passwd := range socksUsers {
 			usersRows.WriteString(fmt.Sprintf(`<tr>
@@ -370,9 +370,9 @@ func (ws *WebServer) handleDashboard(w http.ResponseWriter, r *http.Request) {
   <td><span style='color:#64748b;'>—</span></td>
   <td>-</td>
   <td>
-    <form method="POST" action="/users/delete" style="display:inline;" onsubmit="return confirm('Удалить пользователя %s?');">
+    <form method="POST" action="/users/delete" style="display:inline;" onsubmit="return confirm('Delete user %s?');">
       <input type="hidden" name="username" value="%s">
-      <button type="submit" class="btn-danger">Удалить</button>
+      <button type="submit" class="btn-danger">Delete</button>
     </form>
   </td>
 </tr>`, html.EscapeString(uname), html.EscapeString(passwd), html.EscapeString(uname), html.EscapeString(uname)))
@@ -382,11 +382,11 @@ func (ws *WebServer) handleDashboard(w http.ResponseWriter, r *http.Request) {
 	// MTProto Clients table
 	var mtprotoRows strings.Builder
 	if len(mtprotoClients) == 0 {
-		mtprotoRows.WriteString(`<tr><td colspan="7" class="empty">Список клиентов MTProto пуст. Создайте первого клиента ниже.</td></tr>`)
+		mtprotoRows.WriteString(`<tr><td colspan="7" class="empty">MTProto client list is empty. Create a new client below.</td></tr>`)
 	} else {
 		for _, c := range mtprotoClients {
 			cTag := ""
-			tagBadge := `<span style="font-size:10px; color:#64748b;">Тег не привязан</span>`
+			tagBadge := `<span style="font-size:10px; color:#64748b;">No TAG attached</span>`
 			if c.Tag != nil && *c.Tag != "" {
 				cTag = *c.Tag
 				tagBadge = `<span class="badge active" style="font-size:9px; background:rgba(245,158,11,0.2); color:#fbbf24; border:1px solid #f59e0b;">✓ TAG АКТИВЕН</span>`
@@ -399,7 +399,7 @@ func (ws *WebServer) handleDashboard(w http.ResponseWriter, r *http.Request) {
   <td>
     <form method="POST" action="/mtproto/set_tag" style="display:flex; gap:4px; align-items:center;">
       <input type="hidden" name="client_name" value="%s">
-      <input type="text" name="tag" value="%s" placeholder="32 hex тег бота" style="width:160px; padding:4px 6px; font-size:11px; background:#0f172a; border:1px solid #334155; border-radius:4px; color:#fbbf24; font-family:monospace;" title="32-значный hex TAG промо-канала из @MTProxybot">
+      <input type="text" name="tag" value="%s" placeholder="32 hex bot tag" style="width:160px; padding:4px 6px; font-size:11px; background:#0f172a; border:1px solid #334155; border-radius:4px; color:#fbbf24; font-family:monospace;" title="32-значный hex TAG промо-канала из @MTProxybot">
       <button type="submit" class="btn-primary" style="padding:4px 7px; font-size:11px; background:#f59e0b; color:#0f172a; font-weight:700;" title="Сохранить TAG промо-канала">💾</button>
     </form>
     <div style="margin-top:2px;">%s</div>
@@ -417,7 +417,7 @@ func (ws *WebServer) handleDashboard(w http.ResponseWriter, r *http.Request) {
         <button type="button" class="btn-primary" style="background:#1e293b; border:1px solid #475569; font-size:11px; padding:4px 7px; cursor:pointer;" title="Скопировать ссылку Hex32" onclick="copyTgForSecret('%s', 'Hex32')">📋 Hex32</button>
         <form method="POST" action="/mtproto/delete" style="display:inline; margin-left:auto;" onsubmit="return confirm('Удалить MTProto клиента %s?');">
           <input type="hidden" name="client_name" value="%s">
-          <button type="submit" class="btn-danger" style="padding:4px 8px; font-size:11px;" title="Удалить клиента">✕</button>
+          <button type="submit" class="btn-danger" style="padding:4px 8px; font-size:11px;" title="Delete client">✕</button>
         </form>
       </div>
     </div>
@@ -431,7 +431,7 @@ func (ws *WebServer) handleDashboard(w http.ResponseWriter, r *http.Request) {
 	}
 
 	htmlContent := fmt.Sprintf(`<!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -488,7 +488,7 @@ function copyTgForSecret(sec, mode) {
       <h1>⚡ SOCKS5 & MTProto Proxy Control (Go High-Speed)</h1>
       <p style="font-size:12px; color:#94a3b8; margin-top:4px;">Высокопроизводительный обратный прокси-кластер на Go | SOCKS5: порт %d | MTProto: порт %d</p>
     </div>
-    <a href="/logout" class="btn-logout">Выйти</a>
+    <a href="/logout" class="btn-logout">Sign Out</a>
   </header>
 
   %s
@@ -500,11 +500,11 @@ function copyTgForSecret(sec, mode) {
       <thead>
         <tr>
           <th>ID Агента</th>
-          <th>Транспорт</th>
+          <th>Transport</th>
           <th>IP Ноды / Выход</th>
           <th>Аптайм</th>
-          <th>Активных соединений</th>
-          <th>Всего обработано</th>
+          <th>Active Connections</th>
+          <th>Total Relayed</th>
         </tr>
       </thead>
       <tbody>
@@ -525,7 +525,7 @@ function copyTgForSecret(sec, mode) {
           <th>Promo TAG (@MTProxybot)</th>
           <th>Последняя нода</th>
           <th>Создан</th>
-          <th>Действия</th>
+          <th>Actions</th>
         </tr>
       </thead>
       <tbody>
@@ -556,15 +556,15 @@ function copyTgForSecret(sec, mode) {
 
   <!-- SOCKS5 Users -->
   <div class="card">
-    <h2>Пользователи SOCKS5 / SOCKS4 / HTTP</h2>
+    <h2>SOCKS5 Users / SOCKS4 / HTTP</h2>
     <table>
       <thead>
         <tr>
-          <th>Логин</th>
-          <th>Пароль</th>
+          <th>Username</th>
+          <th>Password</th>
           <th>Последняя нода</th>
           <th>Создан</th>
-          <th>Действие</th>
+          <th>Action</th>
         </tr>
       </thead>
       <tbody>
@@ -574,11 +574,11 @@ function copyTgForSecret(sec, mode) {
 
     <form method="POST" action="/users/add" class="form-inline">
       <div class="group">
-        <label>Логин</label>
+        <label>Username</label>
         <input type="text" name="username" required>
       </div>
       <div class="group">
-        <label>Пароль</label>
+        <label>Password</label>
         <input type="text" name="password" required>
       </div>
       <button type="submit" class="btn-primary">Добавить пользователя SOCKS5</button>
@@ -690,10 +690,10 @@ func (ws *WebServer) handleAPIStatus(w http.ResponseWriter, r *http.Request) {
 func formatDuration(sec int64) string {
 	d := time.Duration(sec) * time.Second
 	if d < time.Minute {
-		return fmt.Sprintf("%dс", int(d.Seconds()))
+		return fmt.Sprintf("%ds", int(d.Seconds()))
 	}
 	if d < time.Hour {
-		return fmt.Sprintf("%dм %dс", int(d.Minutes()), int(d.Seconds())%60)
+		return fmt.Sprintf("%dm %ds", int(d.Minutes()), int(d.Seconds())%60)
 	}
-	return fmt.Sprintf("%dч %dм", int(d.Hours()), int(d.Minutes())%60)
+	return fmt.Sprintf("%dh %dm", int(d.Hours()), int(d.Minutes())%60)
 }

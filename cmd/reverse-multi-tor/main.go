@@ -168,7 +168,7 @@ func main() {
 			fmt.Printf("  * %-14s -> Exit IP: %s\n", s.AgentID, s.ExitIP)
 		}
 		fmt.Println(strings.Repeat("-", 70))
-		fmt.Printf("Всего проверено уникальных IP: %d из %d\n", uniqueCount, len(agents))
+		fmt.Printf("Total verified unique exit IPs: %d out of %d\n", uniqueCount, len(agents))
 		fmt.Println(strings.Repeat("=", 70) + "\n")
 	}
 

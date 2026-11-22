@@ -6,176 +6,177 @@
 [![Telegram Fake-TLS 1.3](https://img.shields.io/badge/Telegram-MTProto%20Fake--TLS-blue.svg)](https://telegram.org)
 
 > [!NOTE]
-> 🔄 **100% Кроссплатформенная совместимость протокола:**  
-> Go-версия и **[Python-версия](https://github.com/zenkdom/reverse-socks-python)** используют полностью идентичный бинарный протокол. Исполняющий агент на Go (`socks-reverse`) может подключаться к Control-серверу на Python, а агент на Python — к Control-серверу на Go.
+> 🔄 **100% Cross-Compatible Protocol:**  
+> This Go implementation and our **[Python Version](https://github.com/zenkdom/reverse-socks-python)** share the exact same binary multiplexing protocol. Any Go reverse agent (`socks-reverse`) can connect to a Python control server, and any Python reverse agent can connect to a Go control server seamlessly.
 
-Высокопроизводительная реализация обратного прокси-кластера на **Go**:
-- **Универсальный Multi-Protocol прокси** (порт `1080`):
-  - **SOCKS5 с поддержкой TCP и UDP**: команды `CONNECT` (0x01), `BIND` (0x02), и `UDP ASSOCIATE` (0x03) по RFC 1928 / RFC 1929. Полная поддержка звонков Telegram, голосовых чатов, WebRTC, DNS, онлайн-игр и QUIC/HTTP3.
-  - **SOCKS4 и SOCKS4a**: поддержка классических клиентов и удаленного резолва доменов.
-  - **HTTP & HTTPS (CONNECT) Proxy**: поддержка туннелирования HTTPS-трафика и прямого HTTP-проксирования с Proxy-Authorization Basic.
-  - Автоматическое определение протокола на лету на едином порту 1080.
-- **MTProto Fake-TLS прокси** (порт `8443`) для Telegram в обход блокировок ТСПУ / РКН:
-  - Режимы Fake-TLS 1.3 (`ee...`) и Obfuscated2 (`Hex32`).
-  - Привязка промо-каналов (TAG) из `@MTProxybot`.
-  - Защита от активных зондов ТСПУ: перенаправление зондов на google.com с возвратом валидного сертификата Google.
-- **Встроенная веб-админка** (порт `9001`) для управления пользователями и мониторинга нод.
-- **Пул исполняющих серверов (`socks-reverse`)** для вывода трафика в интернет с независимой ротацией по пользователям и мгновенным failover (2 секунды).
-- **Multi-Tor Cluster (`reverse-multi-tor`) на 10 нод**: запуск пула изолированных нод с уникальными внешними IP через Tor IsolateSOCKSAuth.
-  > ⚠️ *Важно о скорости сети Tor:* маршрутизация через Tor дает высокий пинг (300–800мс) и невысокую скорость. Для высоких нагрузок, звонков и комфортного сёрфинга **рекомендуется использовать собственные VPS/серверы** с агентом `socks-reverse`.
-
----
-
-## ⚡ Преимущества реализации на Go («работает максимально быстро»)
-
-1. **Аппаратное ускорение шифрования AES-NI**:
-   - В Python (`cryptography`) вызовы C-библиотек через CFFI создают накладные расходы при каждом пакете.
-   - В Go стандартный пакет `crypto/aes` напрямую использует инструкции процессора **AES-NI** на уровне ассемблера, обеспечивая пропускную способность шифрования в несколько гигабайт в секунду при минимальной нагрузке на процессор.
-2. **Нулевые паузы GC и буферный пул (`sync.Pool`)**:
-   - Переиспользование 32-КБ сетевых буферов исключает постоянные аллокации памяти в куче, предотвращая задержки Garbage Collector под высокой нагрузкой.
-3. **Нативный сетевой поллер (IOCP на Windows / epoll на Linux)**:
-   - Легковесные горутины требуют всего несколько килобайт памяти на соединение (в десятки раз меньше Python `asyncio.Task`), что позволяет удерживать сотни тысяч одновременных TCP/UDP потоков.
-4. **TCP NoDelay и KeepAlive**:
-   - По умолчанию отключен алгоритм Нейгла (`SetNoDelay(true)`) для мгновенной доставки интерактивных пакетов и минимизации пинга.
-5. **Автономные бинарные файлы**:
-   - Никаких внешних зависимостей, pip или интерпретаторов — статически скомпилированные бинарники запускаются одной командой на Windows и Linux.
+High-performance reverse proxy cluster engineered in **Go**:
+- **Universal Multi-Protocol Listener** (Port `1080`):
+  - **SOCKS5 with full TCP & UDP support**: `CONNECT` (0x01), `BIND` (0x02), and `UDP ASSOCIATE` (0x03) per RFC 1928 / RFC 1929. Full compatibility with Telegram VoIP calls, WebRTC, DNS, gaming, and QUIC/HTTP3.
+  - **SOCKS4 & SOCKS4a**: support for legacy clients and remote domain resolution.
+  - **HTTP & HTTPS (CONNECT) Proxy**: tunneling for HTTPS traffic and direct forward-proxying with Basic authentication.
+  - Automatic on-the-fly protocol detection on a single port.
+- **MTProto Fake-TLS 1.3 Engine** (Port `8443`):
+  - Circumvents DPI/firewall filtering by masquerading as TLS 1.3 to legitimate domains (`google.com`).
+  - Active probe defense: scanner probes are forwarded to genuine Google endpoints returning authentic certificates.
+  - Support for Obfuscated2 (`Hex32`) and Promo TAGs from `@MTProxybot`.
+- **Built-in Web Administration UI** (Port `9001`):
+  - Manage SOCKS5 and MTProto credentials with real-time node health monitoring.
+  - 1-click `tg://proxy` connect links and clipboard export.
+- **Outbound Reverse Node Pool (`socks-reverse`)**:
+  - Exit nodes connect back through NAT, CGNAT, and firewalls to register with the control server.
+  - Independent round-robin rotation per user and automatic 2-second failover.
+- **Multi-Tor Cluster Module (`reverse-multi-tor`)**:
+  - Run 10 isolated exit nodes with guaranteed distinct external IPs via Tor `IsolateSOCKSAuth`.
 
 ---
 
-## 🏗 Архитектура
+## ⚡ Why Go for High-Speed Networking?
+
+1. **Hardware-Accelerated AES-NI Encryption**:
+   - The Go standard library `crypto/aes` executes hardware AES-NI CPU instructions directly in assembly, yielding multi-gigabit throughput with negligible CPU utilization.
+2. **Zero-Allocation Buffer Pools (`sync.Pool`)**:
+   - Pre-allocated 32 KB network buffers eliminate heap allocations in data relay loops, preventing Garbage Collector latency spikes under heavy traffic.
+3. **Native Epoll / IOCP Runtime Pollers**:
+   - Lightweight goroutines consume mere kilobytes of memory per connection, allowing hundreds of thousands of concurrent TCP/UDP streams on modest VPS hardware.
+4. **Optimized Socket Options**:
+   - Algorithms like Nagle are disabled (`SetNoDelay(true)`) to minimize latency and packet jitter.
+5. **Single Self-Contained Binaries**:
+   - No runtime, Python interpreters, or external packages required. Compiles to standalone static binaries for Linux, Windows, and macOS.
+
+---
+
+## 🏗 Architecture
 
 ```
                              +---------------------------------------+
-                             |           ВЕБ-АДМИНИСТРАТОР           |
-                             |      http://IP_CONTROL:9001           |
-                             |       Логин: admin / changeme123          |
+                             |           WEB ADMINISTRATOR           |
+                             |       http://CONTROL_IP:9001          |
+                             |       Default: admin / changeme123    |
                              +-------------------+-------------------+
                                                  |
-                                                 | 1-клик подключение в Telegram /
-                                                 | Управление пользователями SOCKS5
+                                                 | 1-Click Telegram Setup /
+                                                 | SOCKS5 User Management
                                                  v
 +---------------------------------------+   +---------------------------------------+
-|             КЛИЕНТЫ                   |   |             socks-control             |
-|   (Браузер, curl, v2rayNG и т.д.)     |   |          (Написан на Go)              |
+|                CLIENTS                |   |             socks-control             |
+|    (Browser, curl, Telegram, apps)    |   |           (Written in Go)             |
 +-------------------+-------------------+   |                                       |
-                    | SOCKS5 с логином      |   * Порт 1080: SOCKS5 (СТРОГО AUTH)   |
-                    +---------------------->|   * Порт 8443: MTProto Fake-TLS (TG)  |
-                                            |   * Порт 9000: Порт для reverse-нод   |
-+---------------------------------------+   |   * Порт 9001: Веб-админка            |
-|            TELEGRAM КЛИЕНТ            |   |   * Балансировщик: ROTATION (ротация) |
-|       (Windows, Android, iOS)         |   +-------------------+-------------------+
+                    | SOCKS5 / HTTP (Auth)  |   * Port 1080: SOCKS5/4/HTTP Proxy    |
+                    +---------------------->|   * Port 8443: MTProto Fake-TLS (TG)  |
+                                            |   * Port 9000: Reverse Agent Bridge   |
++---------------------------------------+   |   * Port 9001: Web Admin Panel        |
+|            TELEGRAM CLIENT            |   |   * Balancer: Per-User Rotation       |
+|        (iOS, Android, Desktop)        |   +-------------------+-------------------+
 +-------------------+-------------------+                       ^
                     | MTProto Fake-TLS (8443)                           |
-                    | (маскировка под google.com)                       |
+                    | (Masquerading as google.com)                      |
                     +---------------------------------------------------+
                                                                         |
-                                               Исходящие туннели        |
+                                                Outbound Tunnels        |
                                 +---------------------------------------+---------------------------------------+
                                 |                                                                               |
-                                | Порт 9000                                                             | Порт 9000
+                                | Port 9000                                                             | Port 9000
                                 v                                                                               v
                    +-------------------------+                                                     +-------------------------+
                    |      socks-reverse      |                                                     |      socks-reverse      |
-                   |    (Исполняющий #1)     |                                                     |    (Исполняющий #2)     |
-                   |     reverse-node-1      |                                                     |     reverse-node-2      |
+                   |      (Exit Node #1)     |                                                     |      (Exit Node #2)     |
+                   |      reverse-node-1     |                                                     |      reverse-node-2     |
                    +------------+------------+                                                     +------------+------------+
                                 |                                                                               |
-                                | Выход в интернет                                                              | Выход в интернет
+                                | Direct Internet Access                                                        | Direct Internet Access
                                 v                                                                               v
                    +-------------------------+                                                     +-------------------------+
-                   |    Интернет / Сайты     |                                                     |    Telegram DC (443)    |
-                   |     (IP первой ноды)    |                                                     |    (IP второй ноды)     |
+                   |    Target Websites      |                                                     |   Telegram DataCenters  |
+                   |      (Node #1 IP)       |                                                     |       (Node #2 IP)      |
                    +-------------------------+                                                     +-------------------------+
 ```
 
 ---
 
-## 📁 Структура папки `go/`
+## 📁 Repository Structure
 
 ```text
-go/
+reverse-socks-go/
 ├── cmd/
-│   ├── socks-control/       # Главный сервер (SOCKS5 + MTProto + Control Bridge + Web UI)
-│   ├── socks-reverse/       # Исполняющий агент (выход в интернет)
-│   └── reverse-multi-tor/   # Оркестратор Tor-кластера с гарантией уникальных IP
+│   ├── socks-control/       # Master Control Server (SOCKS5, MTProto, Bridge, Web UI)
+│   ├── socks-reverse/       # Outbound Reverse Exit Node
+│   └── reverse-multi-tor/   # Multi-Tor 10-node Cluster Runner
 ├── pkg/
-│   ├── protocol/            # Бинарный протокол RSX5, Fake-TLS 1.3, SOCKS5 UDP
-│   ├── control/             # Управление reverse-агентами, ротация, failover
-│   ├── proxy/               # SOCKS5 (TCP, UDP, BIND), SOCKS4/4a, HTTP/HTTPS
-│   ├── mtproto/             # MTProto Fake-TLS + Hex32, AES-CTR, обход DPI
-│   ├── admin/               # HTTP Web-админка и REST API
-│   ├── users/               # Хранение и аутентификация пользователей
-│   ├── agent/               # Обратный агент и туннелирование трафика
-│   └── tor/                 # Tor SOCKS5 клиент и IsolateSOCKSAuth
+│   ├── protocol/            # Multiplexing binary protocol, Fake-TLS 1.3, UDP frames
+│   ├── control/             # Agent pool manager, per-user rotation, fast failover
+│   ├── proxy/               # SOCKS5 (TCP/UDP/BIND), SOCKS4/4a, HTTP/HTTPS engine
+│   ├── mtproto/             # MTProto Fake-TLS + Hex32, probe deflection
+│   ├── admin/               # Web Admin UI & REST API
+│   ├── users/               # SOCKS5 and MTProto user storage
+│   ├── agent/               # Reverse agent tunnel execution
+│   └── tor/                 # Tor client & stream isolation
 ├── test/
-│   └── all_test.go          # Полный набор интеграционных тестов
-├── config.json              # Конфиг socks-control по умолчанию
-├── users.json               # База SOCKS5 пользователей
-├── mtproto_users.json       # База MTProto клиентов
-├── socks-control.exe        # Скомпилированный бинарник для Windows
-├── socks-control-linux-amd64# Скомпилированный бинарник для Linux
-├── socks-reverse.exe        # Reverse-агент для Windows
-├── socks-reverse-linux-amd64# Reverse-агент для Linux
-├── start-control.bat/.sh    # Скрипты запуска control-сервера
-└── start-reverse.bat/.sh    # Скрипты запуска reverse-агента
+│   └── all_test.go          # Integration test suite
+├── config.example.json      # Configuration template
+├── start-control.sh / .bat  # Master startup scripts
+└── start-reverse.sh / .bat  # Exit node startup scripts
 ```
 
 ---
 
-## 🚀 Сборка и запуск
+## 🚀 Quick Start Guide
 
-### 1. Запуск на Windows
+### Step 1. Master Server Setup (`socks-control`)
 
-Запуск основного сервера:
-```cmd
-socks-control.exe --config config.json
-# Или дважды кликните start-control.bat
-```
-
-Запуск reverse-агента на удаленной ноде:
-```cmd
-socks-reverse.exe --host IP_CONTROL_СЕРВЕРА --port 9000 --token SecretProxyToken2026! --agent-id node-1
-# Или с Fake-TLS:
-socks-reverse.exe --host IP_CONTROL_СЕРВЕРА --port 9000 --token SecretProxyToken2026! --agent-id node-1 --fake-tls --fake-tls-domain google.com
-```
-
-### 2. Запуск на Linux / Ubuntu VPS
-
-1. Скопируйте файлы на сервер в `/opt/socks-control`:
+1. Build or download the binary:
    ```bash
-   sudo mkdir -p /opt/socks-control
-   sudo cp socks-control-linux-amd64 /opt/socks-control/
-   sudo cp config.json /opt/socks-control/
-   sudo cp users.json /opt/socks-control/ 2>/dev/null || true
-   sudo cp mtproto_users.json /opt/socks-control/ 2>/dev/null || true
-   sudo chmod +x /opt/socks-control/socks-control-linux-amd64
+   go build -o socks-control ./cmd/socks-control
    ```
 
-2. Установите systemd-сервис:
+2. Copy configuration:
    ```bash
-   sudo cp socks-control.service /etc/systemd/system/
-   sudo systemctl daemon-reload
-   sudo systemctl enable --now socks-control
+   cp config.example.json config.json
    ```
 
-3. Просмотр логов:
+3. Launch server:
    ```bash
-   sudo journalctl -u socks-control -f
+   ./socks-control --config config.json
    ```
 
 ---
 
-## 🧪 Запуск тестов
+### Step 2. Outbound Exit Node Setup (`socks-reverse`)
 
-Для запуска всех тестов:
+Run an exit node on any machine:
+
+```bash
+go build -o socks-reverse ./cmd/socks-reverse
+
+./socks-reverse --host YOUR_CONTROL_SERVER_IP --port 9000 --token SecretProxyToken2026! --agent-id exit-node-1
+```
+
+*With Fake-TLS encapsulation:*
+```bash
+./socks-reverse --host YOUR_CONTROL_SERVER_IP --port 9000 --token SecretProxyToken2026! --agent-id exit-node-1 --fake-tls --fake-tls-domain google.com
+```
+
+---
+
+### Step 3. Multi-Tor 10-Node Cluster Module
+
+```bash
+go build -o reverse-multi-tor ./cmd/reverse-multi-tor
+./reverse-multi-tor --config config.json
+```
+
+> ⚠️ *Note on Tor latency:* Tor onion routing introduces significant latency (300–800ms ping). For streaming, gaming, and VoIP, **we recommend deploying standard `socks-reverse` agents on your own VPS servers**.
+
+---
+
+## 🧪 Testing
+
+Run all unit and integration tests:
 ```bash
 go test -v ./test/...
 ```
-Тест проверяет:
-- SOCKS5 TCP CONNECT, UDP ASSOCIATE, BIND.
-- SOCKS4 и SOCKS4a с удаленным резолвом доменов.
-- HTTP CONNECT и HTTP forward proxying.
-- Строгую аутентификацию и отсечение неавторизованных запросов.
-- MTProto Fake-TLS 1.3 рукопожатие с проверкой HMAC-SHA256 и ServerHello.
-- Ротацию нод персонально для каждого пользователя.
-- Работу веб-админки и REST API.
+
+---
+
+## 📄 License
+
+This project is licensed under the [MIT License](LICENSE).
