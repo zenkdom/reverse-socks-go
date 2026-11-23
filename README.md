@@ -113,6 +113,7 @@ reverse-socks-go/
 ├── test/
 │   └── all_test.go          # Integration test suite
 ├── config.example.json      # Configuration template
+├── install.sh               # One-line interactive Linux installer
 ├── start-control.sh / .bat  # Master startup scripts
 └── start-reverse.sh / .bat  # Exit node startup scripts
 ```
@@ -121,7 +122,26 @@ reverse-socks-go/
 
 ## 🚀 Quick Start Guide
 
-### Step 1. Master Server Setup (`socks-control`)
+### ⚡ One-Line Automated Installer (Recommended)
+
+Set up the cluster on any Linux VPS (Ubuntu, Debian, CentOS; x86_64 or ARM64) in under 60 seconds:
+
+```bash
+curl -sSL https://raw.githubusercontent.com/zenkdom/reverse-socks-go/main/install.sh | bash
+```
+
+The interactive installer will:
+1. Prompt for your configuration settings in order (ports, credentials, tokens) with smart, secure defaults.
+2. Download the precompiled binary for your architecture (`amd64` or `arm64`).
+3. Automatically configure UFW firewall rules if active.
+4. Install and enable the background `systemd` service (`systemctl enable --now socks-control`).
+5. Print your **Web Admin Dashboard URL**, **credentials**, and direct **1-click Telegram Fake-TLS link**!
+
+---
+
+### Manual Setup from Source
+
+#### Step 1. Master Server Setup (`socks-control`)
 
 1. Build or download the binary:
    ```bash
